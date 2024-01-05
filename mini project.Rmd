@@ -1,0 +1,60 @@
+library(tidyverse) 
+library(ggplot2)
+library(tidyr)
+library(dplyr)
+library("gapminder")
+data("gapminder")
+head(gapminder)
+gapminder
+
+#2
+avg_life_year<- gapminder %>% group_by(continent, year) %>% summarize(avg_life_expectancy = mean(lifeExp))
+avg_life_year
+plot <- ggplot(avg_life_year, aes(x = year, y = avg_life_expectancy, color = continent)) +
+  geom_line() + labs(x = "Year", y = "Average Life Expectancy", color = "Continent") +
+  theme_minimal()
+plot
+
+difference <- avg_life_year %>%
+  inner_join(avg_life_year, by = "year") %>%
+  filter(continent.x != continent.y) %>%
+  mutate(diff = avg_life_expectancy.y - avg_life_expectancy.x)
+ difference 
+ 
+ plot2 <- ggplot(difference , aes(x = year, y = diff, color = paste(continent.x, continent.y, sep = " vs "))) +
+  geom_line() + labs(x = "Year", y = "Difference in Average Life Expectancy", color = "Continent Comparison") +
+  theme_minimal()
+  plot2
+  
+avg_life_year_chg <- avg_life_year %>%  group_by(continent) %>% mutate(change = avg_life_expectancy - lag(avg_life_expectancy)) %>% ungroup()
+avg_life_year_chg
+plot3 <- ggplot(avg_life_year_chg, aes(x = year, y = change, color = continent)) +
+geom_line() + labs(title = "Change in Average Life Expectancy over Time by Continent",
+       x = "Year", y = "Change in Average Life Expectancy") +  theme_minimal()
+ plot3
+ 
+ #3
+plot4 <- ggplot(gapminder, aes(x = gdpPercap, y = lifeExp, color = continent)) + geom_point(alpha = 0.7) +
+facet_wrap(~year) + scale_x_log10() + labs(x = "GDP per capita", y = "Life expectancy", color = "Continent") + theme_minimal()
+plot4
+plot5 <-  ggplot(gapminder, aes(x = gdpPercap, y = lifeExp, color = continent)) + geom_point(alpha = 0.7) +
+facet_wrap(~continent, ncol = 3) + scale_x_log10() + labs(x = "GDP per capita", y = "Life expectancy", color = "Continent") + theme_minimal()
+plot5
+
+lm_fit <- lm(lifeExp ~ gdpPercap, data = gapminder)
+summary(lm_fit)
+
+corl <- cor(gapminder$lifeExp, gapminder$gdpPercap)
+corl
+
+cor2 <- by(gapminder, gapminder$continent, function(x) { cor(x$gdpPercap, x$lifeExp)})
+cor2
+
+plot6 <- ggplot(gapminder, aes(x = gdpPercap, y = lifeExp)) + geom_point() + geom_smooth(method = "lm") +
+xlab("GDP per capita") + ylab("Life expectancy") + ggtitle("Relationship between GDP per capita and life expectancy with trend line")
+plot6
+
+plot7 <- ggplot(gapminder, aes(x = gdpPercap, y = lifeExp)) + geom_point() + geom_smooth(method = "lm") +
+xlab("GDP per capita") +  ylab("Life expectancy") + ggtitle("Relationship between GDP per capita and life expectancy with potential exceptions") + geom_text(data = subset(gapminder, gdpPercap > 40000 | lifeExp > 80),
+            aes(label = country), vjust = 1, hjust = 1, check_overlap = TRUE)
+plot7
